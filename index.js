@@ -1,7 +1,10 @@
-const http = require('http');
 const Datastore = require('nedb');
 const ODataServer = require('simple-odata-server');
 const Adapter = require('simple-odata-server-nedb');
+
+var express = require('express');
+var cors = require('cors');
+var app = express();
 
 const computers = new Datastore({ filename: 'computers.db', autoload: true });
 
@@ -28,11 +31,23 @@ const model = {
     }
 };
 
-var odataServer = ODataServer("http://localhost:3000")
-    .model(model)
-    .adapter(Adapter((es, cb) => {
-        cb(null, db)
-    }));
+var odataServer = ODataServer("http://localhost:3000").model(model)
+    .adapter(Adapter(function (es, cb) { cb(null, computers) }));
 
+app.listen(3000, (req, res) => {
+    console.log("Server is working on port 3000");
+});
 
-http.createServer(odataServer.handle.bind(odataServer)).listen(3000);
+app.use(cors());
+
+app.use("/", function (req, res) {
+    odataServer.handle(req, res);
+});
+
+let comp1 = {
+    "_id": "1",
+    "_manufacturer": "LG",
+    "_processor": "Intel"
+};
+
+computers.insert(comp1);
